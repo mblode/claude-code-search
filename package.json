@@ -1,0 +1,63 @@
+{
+  "name": "claude-code-search",
+  "version": "1.0.0",
+  "description": "Interactive TUI for searching Claude Code session history",
+  "author": "Matthew Blode",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mblode/claude-code-search.git"
+  },
+  "homepage": "https://github.com/mblode/claude-code-search#readme",
+  "bugs": {
+    "url": "https://github.com/mblode/claude-code-search/issues"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ccs": "dist/ccs.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/ccs.js",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "cli",
+    "search",
+    "tui",
+    "terminal",
+    "prompt",
+    "history",
+    "anthropic"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "clipboardy": "^5.0.2",
+    "ink": "^6.5.1",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
