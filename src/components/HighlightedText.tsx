@@ -1,44 +1,24 @@
 import { Text } from "ink";
 import React from "react";
 
-interface HighlightedTextProps {
+interface Props {
   text: string;
   positions: Set<number>;
   isSelected?: boolean;
   maxLength?: number;
 }
 
-/**
- * Render text with matched characters highlighted in magenta/bold
- */
-export function HighlightedText({
-  text,
-  positions,
-  isSelected = false,
-  maxLength,
-}: HighlightedTextProps) {
-  // Truncate if needed
-  let displayText = text;
-  let truncated = false;
-  if (maxLength && text.length > maxLength) {
-    displayText = text.slice(0, maxLength - 1);
-    truncated = true;
-  }
+export function HighlightedText({ text, positions, isSelected = false, maxLength }: Props) {
+  const display = maxLength && text.length > maxLength ? text.slice(0, maxLength - 1) : text;
+  const truncated = maxLength && text.length > maxLength;
 
   return (
     <Text>
-      {[...displayText].map((char, i) => {
-        const isMatch = positions.has(i);
-        return (
-          <Text
-            key={i}
-            bold={isMatch}
-            color={isMatch ? "magenta" : isSelected ? "white" : "gray"}
-          >
-            {char}
-          </Text>
-        );
-      })}
+      {[...display].map((char, i) => (
+        <Text key={i} bold={positions.has(i)} color={positions.has(i) ? "magenta" : isSelected ? "white" : "gray"}>
+          {char}
+        </Text>
+      ))}
       {truncated && <Text color="gray" dimColor>…</Text>}
     </Text>
   );

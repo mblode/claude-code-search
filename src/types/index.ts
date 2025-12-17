@@ -75,21 +75,3 @@ export interface SearchResult {
   score: number;
   positions: Set<number>;
 }
-
-export interface CLIOptions {
-  after?: string;
-  before?: string;
-  project?: string;
-  session?: string;
-  role?: "user" | "assistant";
-  interactive: boolean;
-  regex?: boolean;
-}
-
-export interface FilterOptions {
-  afterDate?: Date;
-  beforeDate?: Date;
-  project?: string;
-  session?: string;
-  role?: "user" | "assistant";
-}
