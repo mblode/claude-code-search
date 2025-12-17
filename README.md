@@ -3,11 +3,15 @@
 [![npm version](https://img.shields.io/npm/v/claude-code-search.svg)](https://www.npmjs.com/package/claude-code-search)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Interactive TUI for searching through your Claude Code session history. Find and reuse prompts you've written before.
+Like [fzf](https://github.com/junegunn/fzf) or [atuin](https://github.com/atuinsh/atuin), but for your Claude Code prompts.
 
 ![ccs example](./example.png)
 
-## Installation
+## Why?
+
+Your best prompts are buried across dozens of Claude Code sessions. This tool lets you instantly search and reuse them instead of rewriting from scratch.
+
+## Install
 
 ```bash
 npm install -g claude-code-search
@@ -19,16 +23,22 @@ npm install -g claude-code-search
 ccs
 ```
 
-This will open an interactive search interface for all your Claude Code prompts stored in `~/.claude/projects/`.
+Select a prompt and it's copied to your clipboard, ready to paste.
+
+### Pipe to Claude
+
+Extract insights from your prompt history:
+
+```bash
+ccs | claude "what patterns do you see in how I prompt?"
+```
 
 ## Features
 
-- **Fulltext search** - Find prompts containing your search terms
-- **Multi-term search** - Search for `deploy prod` to find prompts containing both words
-- **Split-pane preview** - See the full prompt content on the right
-- **Quick jump** - Press 1-9 to instantly select a result
-- **Filter modes** - Search globally or within current directory
-- **Copy to clipboard** - Selected prompt is copied and printed on exit
+- **Fuzzy search** - Find prompts by any words they contain
+- **Split-pane preview** - See full content before selecting
+- **Quick jump** - Press 1-9 to instantly select
+- **Filter modes** - Search globally or within current directory (`Ctrl+R`)
 
 ## Keyboard Shortcuts
 
@@ -36,24 +46,14 @@ This will open an interactive search interface for all your Claude Code prompts 
 |-----|--------|
 | `↑` / `↓` | Navigate results |
 | `1-9` | Quick jump to result |
-| `Enter` | Copy selected prompt & exit |
-| `Ctrl+R` | Toggle filter mode (global/directory) |
-| `Shift+Tab` | Toggle filter mode |
+| `Enter` | Copy & exit |
+| `Ctrl+R` | Toggle global/directory filter |
 | `Esc` | Quit |
-
-## How It Works
-
-Claude Code stores your conversation history in `~/.claude/projects/` as JSONL files. This tool:
-
-1. Scans all session files
-2. Extracts your user prompts (filters out tool results, warmups, and agent messages)
-3. Provides a fast, searchable interface
-4. Copies selected prompts to your clipboard for reuse
 
 ## Requirements
 
 - Node.js >= 18
-- Claude Code installed (with session history in `~/.claude/projects/`)
+- Claude Code (reads from `~/.claude/projects/`)
 
 ## License
 
