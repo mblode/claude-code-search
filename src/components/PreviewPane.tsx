@@ -5,23 +5,22 @@ import { compactTime } from "../utils/time.js";
 
 interface Props {
   message: ParsedMessage | undefined;
-  height: number;
   width: number;
 }
 
-export function PreviewPane({ message, height, width }: Props) {
+export function PreviewPane({ message, width }: Props) {
   const contentWidth = Math.max(10, width - 4);
 
   if (!message) {
     return (
-      <Box flexDirection="column" width={width} borderStyle="round" borderColor="gray" paddingX={1} height={height} overflow="hidden">
+      <Box flexDirection="column" width={width} borderStyle="round" borderColor="gray" paddingX={1} flexGrow={1} overflow="hidden">
         <Text color="gray" dimColor>Select a prompt to preview</Text>
       </Box>
     );
   }
 
   return (
-    <Box flexDirection="column" width={width} borderStyle="round" borderColor="gray" paddingX={1} height={height} overflow="hidden">
+    <Box flexDirection="column" width={width} borderStyle="round" borderColor="gray" paddingX={1} flexGrow={1} overflow="hidden">
       <Box width={contentWidth}>
         <Text wrap="truncate">
           <Text color="white" bold>{message.projectName}</Text>

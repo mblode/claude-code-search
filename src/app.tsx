@@ -77,7 +77,7 @@ function App({ cwd }: { cwd: string }) {
   return (
     <Box flexDirection="column" height={terminalHeight}>
       <Box flexGrow={1} flexDirection="row" overflow="hidden">
-        <Box flexDirection="column" width={leftPaneWidth} borderStyle="round" borderColor="gray" paddingX={1} overflow="hidden">
+        <Box flexDirection="column" width={leftPaneWidth} borderStyle="round" borderColor="gray" paddingX={1} overflow="hidden" flexGrow={1}>
           <Box>
             <Text color="magenta" bold>❯ </Text>
             <TextInput value={query} onChange={setQuery} placeholder="Search prompts..." />
@@ -110,9 +110,7 @@ function App({ cwd }: { cwd: string }) {
             )}
           </Box>
         </Box>
-        <Box width={rightPaneWidth} overflow="hidden">
-          <PreviewPane message={selectedMessage} height={terminalHeight - 3} width={rightPaneWidth} />
-        </Box>
+        <PreviewPane message={selectedMessage} width={rightPaneWidth} />
       </Box>
       <Box justifyContent="space-between" paddingX={1}>
         <Text color="gray" dimColor>↑↓ navigate · 1-9 jump · ⏎ copy · ^R mode · esc quit</Text>
