@@ -42,13 +42,14 @@ export interface JSONLRecord {
   uuid: string;
   sessionId: string;
   agentId?: string;
-  parentUuid?: string;
+  parentUuid?: string | null;
   cwd: string;
   gitBranch?: string;
   slug?: string;
   userType?: string;
   version?: string;
   isSidechain?: boolean;
+  isCompactSummary?: boolean;
   message?: MessageContent;
   requestId?: string;
   toolUseResult?: unknown;

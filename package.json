@@ -19,7 +19,8 @@
     "ccs": "dist/ccs.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "example.png"
   ],
   "exports": {
     ".": {

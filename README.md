@@ -5,6 +5,8 @@
 
 Interactive TUI for searching through your Claude Code session history. Find and reuse prompts you've written before.
 
+![ccs example](./example.png)
+
 ## Installation
 
 ```bash
