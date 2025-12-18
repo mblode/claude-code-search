@@ -22,16 +22,24 @@ function App({ cwd }: { cwd: string }) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
+    setLoadError(null);
     loadMessages({
       projectFilter: filterMode === "directory" ? cwd : undefined,
       filters: { role: "user" },
-    }).then((loaded) => {
-      setMessages(loaded);
-      setIsLoading(false);
-    });
+    })
+      .then((loaded) => {
+        setMessages(loaded);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        setLoadError(error instanceof Error ? error.message : "Failed to load");
+        setIsLoading(false);
+      });
   }, [filterMode, cwd]);
 
   useEffect(() => {
@@ -43,8 +51,11 @@ function App({ cwd }: { cwd: string }) {
     const selected = results[index];
     if (selected) {
       clipboard.writeSync(selected.item.content);
-      console.log(selected.item.content);
-      exit();
+      setCopyStatus("copied");
+      setTimeout(() => {
+        console.log(selected.item.content);
+        exit();
+      }, 150);
     }
   };
 
@@ -83,8 +94,20 @@ function App({ cwd }: { cwd: string }) {
             <TextInput value={query} onChange={setQuery} placeholder="Search prompts..." />
           </Box>
           <Box flexDirection="column" marginTop={1} flexGrow={1}>
-            {results.length === 0 && !isLoading ? (
-              <Text color="gray" dimColor>No results</Text>
+            {loadError ? (
+              <Box flexDirection="column">
+                <Text color="red">{loadError}</Text>
+                <Text color="gray" dimColor>Press Esc to quit</Text>
+              </Box>
+            ) : results.length === 0 && !isLoading ? (
+              <Box flexDirection="column">
+                <Text color="gray" dimColor>
+                  {query ? `No results for '${query}'` : "No prompts found"}
+                </Text>
+                {filterMode === "directory" && (
+                  <Text color="gray" dimColor>Try Ctrl+R for global search</Text>
+                )}
+              </Box>
             ) : (
               visibleResults.map((result, i) => {
                 const idx = startIndex + i;
@@ -113,7 +136,11 @@ function App({ cwd }: { cwd: string }) {
         <PreviewPane message={selectedMessage} width={rightPaneWidth} />
       </Box>
       <Box justifyContent="space-between" paddingX={1}>
-        <Text color="gray" dimColor>↑↓ navigate · 1-9 jump · ⏎ copy · ^R mode · esc quit</Text>
+        {copyStatus === "copied" ? (
+          <Text color="green">Copied!</Text>
+        ) : (
+          <Text color="gray" dimColor>↑↓ navigate · 1-9 jump · ⏎ copy · ^R mode · esc quit</Text>
+        )}
         <Text>
           <Text color="magenta">[{filterMode === "global" ? "global" : "dir"}]</Text>
           <Text color="gray" dimColor> {isLoading ? "loading..." : `${messages.length} prompts`}</Text>

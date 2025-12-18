@@ -20,7 +20,12 @@ npm install -g claude-code-search
 ## Usage
 
 ```bash
-ccs
+ccs                     # Launch interactive TUI
+ccs -l                  # List recent prompts
+ccs -s "refactor"       # Search for "refactor"
+ccs -l -j               # Output as JSON
+ccs -l -n 50            # List last 50 prompts
+ccs -p /path/to/proj    # Filter by project path
 ```
 
 Select a prompt and it's copied to your clipboard, ready to paste.
@@ -30,25 +35,51 @@ Select a prompt and it's copied to your clipboard, ready to paste.
 Extract insights from your prompt history:
 
 ```bash
-ccs | claude "what patterns do you see in how I prompt?"
+ccs -l | claude "what patterns do you see in how I prompt?"
+ccs -s "refactor" -j | claude "summarize these prompts"
 ```
 
 ## Features
 
 - **Fuzzy search** - Find prompts by any words they contain
+- **Relevance ranking** - Results sorted by match quality, not just date
 - **Split-pane preview** - See full content before selecting
 - **Quick jump** - Press 1-9 to instantly select
-- **Filter modes** - Search globally or within current directory (`Ctrl+R`)
+- **Filter modes** - Search globally or within current directory
+- **Non-interactive mode** - Use with `-l` or `-s` for scripting
+- **Color support** - Respects `NO_COLOR` and `FORCE_COLOR`
+
+## CLI Options
+
+```
+Options:
+  -l, --list            List all prompts (non-interactive)
+  -s, --search <query>  Search prompts with query (non-interactive)
+  -j, --json            Output as JSON (use with -l or -s)
+  -n, --limit <n>       Limit number of results (default: 100)
+  -p, --project <path>  Filter by project path
+  -v, --version         Show version number
+  -h, --help            Show help
+```
 
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| `↑` / `↓` | Navigate results |
+| `↑` / `↓` or `j` / `k` | Navigate results |
 | `1-9` | Quick jump to result |
 | `Enter` | Copy & exit |
-| `Ctrl+R` | Toggle global/directory filter |
-| `Esc` | Quit |
+| `Ctrl+R` / `Shift+Tab` | Toggle global/directory filter |
+| `Esc` / `Ctrl+C` | Quit |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Invalid arguments |
+| 3 | No results found |
 
 ## Requirements
 
