@@ -17,8 +17,23 @@ export function extractProjectName(dirname: string): string {
 
 export function matchesProject(dirname: string, filter: string): boolean {
   if (filter.startsWith("/")) {
+    // For absolute paths, be very permissive at scanner level
+    // The actual filtering will happen at the loader level based on message.cwd
+    // Due to lossy encoding (hyphens become slashes), we can't reliably match here
+    // So we just check if they could potentially be related based on parent directories
     const decoded = decodeProjectPath(dirname);
-    return filter.startsWith(decoded) || decoded.startsWith(filter);
+    const filterParts = filter.split('/').filter(Boolean);
+    const decodedParts = decoded.split('/').filter(Boolean);
+
+    // Check if they share at least some common parent directories
+    // We'll be permissive and only require matching the first few parts
+    const minPartsToMatch = Math.min(4, Math.min(filterParts.length, decodedParts.length));
+    for (let i = 0; i < minPartsToMatch; i++) {
+      if (filterParts[i] !== decodedParts[i]) {
+        return false;
+      }
+    }
+    return true;
   }
   return extractProjectName(dirname).toLowerCase().includes(filter.toLowerCase());
 }

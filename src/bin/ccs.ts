@@ -185,5 +185,5 @@ if (args.help) {
       fatal(err.message || "An error occurred");
     });
 } else {
-  run(process.cwd());
+  run(process.cwd(), args.project || undefined);
 }

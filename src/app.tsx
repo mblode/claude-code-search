@@ -12,12 +12,17 @@ import { PreviewPane } from "./components/PreviewPane.js";
 
 type FilterMode = "global" | "directory";
 
-function App({ cwd }: { cwd: string }) {
+interface AppProps {
+  cwd: string;
+  initialProjectFilter?: string;
+}
+
+function App({ cwd, initialProjectFilter }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
 
   const [query, setQuery] = useState("");
-  const [filterMode, setFilterMode] = useState<FilterMode>("global");
+  const [filterMode, setFilterMode] = useState<FilterMode>(initialProjectFilter ? "directory" : "global");
   const [messages, setMessages] = useState<ParsedMessage[]>([]);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -29,7 +34,7 @@ function App({ cwd }: { cwd: string }) {
     setIsLoading(true);
     setLoadError(null);
     loadMessages({
-      projectFilter: filterMode === "directory" ? cwd : undefined,
+      projectFilter: filterMode === "directory" ? (initialProjectFilter || cwd) : undefined,
       filters: { role: "user" },
     })
       .then((loaded) => {
@@ -40,7 +45,7 @@ function App({ cwd }: { cwd: string }) {
         setLoadError(error instanceof Error ? error.message : "Failed to load");
         setIsLoading(false);
       });
-  }, [filterMode, cwd]);
+  }, [filterMode, cwd, initialProjectFilter]);
 
   useEffect(() => {
     setResults(search(messages, query, 100));
@@ -150,6 +155,6 @@ function App({ cwd }: { cwd: string }) {
   );
 }
 
-export function run(cwd: string) {
-  render(<App cwd={cwd} />);
+export function run(cwd: string, projectFilter?: string) {
+  render(<App cwd={cwd} initialProjectFilter={projectFilter} />);
 }
