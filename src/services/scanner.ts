@@ -1,8 +1,8 @@
-import { createReadStream } from "fs";
-import { readdir } from "fs/promises";
-import { join } from "path";
-import { createInterface } from "readline";
-import { PROJECTS_DIR, matchesProject } from "../utils/paths.js";
+import { createReadStream } from "node:fs";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { createInterface } from "node:readline";
+import { matchesProject, PROJECTS_DIR } from "../utils/paths.js";
 
 export interface ScanOptions {
   projectFilter?: string;
@@ -21,7 +21,10 @@ async function discoverProjects(projectFilter?: string): Promise<string[]> {
   }
 }
 
-async function discoverSessionFiles(projectDir: string, sessionFilter?: string): Promise<string[]> {
+async function discoverSessionFiles(
+  projectDir: string,
+  sessionFilter?: string
+): Promise<string[]> {
   try {
     const entries = await readdir(join(PROJECTS_DIR, projectDir));
     return entries
@@ -36,16 +39,23 @@ async function discoverSessionFiles(projectDir: string, sessionFilter?: string):
 export async function* streamLines(filePath: string): AsyncGenerator<string> {
   const rl = createInterface({
     input: createReadStream(filePath, { encoding: "utf-8" }),
-    crlfDelay: Infinity,
+    crlfDelay: Number.POSITIVE_INFINITY,
   });
   for await (const line of rl) {
-    if (line.trim()) yield line;
+    if (line.trim()) {
+      yield line;
+    }
   }
 }
 
-export async function* scanAllFiles(options: ScanOptions = {}): AsyncGenerator<{ filePath: string; projectDir: string }> {
+export async function* scanAllFiles(
+  options: ScanOptions = {}
+): AsyncGenerator<{ filePath: string; projectDir: string }> {
   for (const projectDir of await discoverProjects(options.projectFilter)) {
-    for (const filePath of await discoverSessionFiles(projectDir, options.sessionFilter)) {
+    for (const filePath of await discoverSessionFiles(
+      projectDir,
+      options.sessionFilter
+    )) {
       yield { filePath, projectDir };
     }
   }

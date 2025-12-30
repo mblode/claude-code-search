@@ -33,6 +33,8 @@ export const colors = {
  * Wrap text in ANSI color codes if color is supported
  */
 export function colorize(text: string, color: keyof typeof colors): string {
-  if (!supportsColor()) return text;
+  if (!supportsColor()) {
+    return text;
+  }
   return `${colors[color]}${text}${colors.reset}`;
 }

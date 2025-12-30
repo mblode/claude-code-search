@@ -1,5 +1,7 @@
 import type { ParsedMessage, SearchResult } from "../types/index.js";
 
+const WHITESPACE_REGEX = /\s+/;
+
 /**
  * Calculate relevance score for a search match
  */
@@ -25,9 +27,13 @@ function calculateScore(
 
   // 2. Position bonus: terms near start score higher
   const firstPosition = Math.min(...positions);
-  if (firstPosition < 50) score += 15;
-  else if (firstPosition < 150) score += 10;
-  else if (firstPosition < 300) score += 5;
+  if (firstPosition < 50) {
+    score += 15;
+  } else if (firstPosition < 150) {
+    score += 10;
+  } else if (firstPosition < 300) {
+    score += 5;
+  }
 
   // 3. Exact phrase match bonus
   const query = terms.join(" ");
@@ -38,15 +44,25 @@ function calculateScore(
   // 4. Term proximity bonus (for multi-term queries)
   if (terms.length > 1 && positions.size > 0) {
     const sortedPos = [...positions].sort((a, b) => a - b);
-    const span = sortedPos[sortedPos.length - 1] - sortedPos[0];
-    const idealSpan = terms.reduce((sum, t) => sum + t.length, 0) + terms.length - 1;
-    if (span <= idealSpan * 2) score += 15;
-    else if (span <= idealSpan * 5) score += 10;
+    const lastPos = sortedPos.at(-1);
+    if (lastPos !== undefined) {
+      const span = lastPos - sortedPos[0];
+      const idealSpan =
+        terms.reduce((sum, t) => sum + t.length, 0) + terms.length - 1;
+      if (span <= idealSpan * 2) {
+        score += 15;
+      } else if (span <= idealSpan * 5) {
+        score += 10;
+      }
+    }
   }
 
   // 5. Content length normalization (prefer concise matches)
-  if (content.length < 200) score += 5;
-  else if (content.length < 500) score += 3;
+  if (content.length < 200) {
+    score += 5;
+  } else if (content.length < 500) {
+    score += 3;
+  }
 
   return score;
 }
@@ -65,18 +81,22 @@ export function search(
       .map((item) => ({ item, score: 0, positions: new Set<number>() }));
   }
 
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = query.toLowerCase().split(WHITESPACE_REGEX).filter(Boolean);
   const results: SearchResult[] = [];
 
   for (const item of messages) {
     const lower = item.content.toLowerCase();
-    if (!terms.every((t) => lower.includes(t))) continue;
+    if (!terms.every((t) => lower.includes(t))) {
+      continue;
+    }
 
     const positions = new Set<number>();
     for (const term of terms) {
       let idx = lower.indexOf(term);
       while (idx !== -1) {
-        for (let i = idx; i < idx + term.length; i++) positions.add(i);
+        for (let i = idx; i < idx + term.length; i++) {
+          positions.add(i);
+        }
         idx = lower.indexOf(term, idx + 1);
       }
     }
@@ -90,7 +110,9 @@ export function search(
   return results
     .sort((a, b) => {
       const scoreDiff = b.score - a.score;
-      if (scoreDiff !== 0) return scoreDiff;
+      if (scoreDiff !== 0) {
+        return scoreDiff;
+      }
       return b.item.timestamp.getTime() - a.item.timestamp.getTime();
     })
     .slice(0, limit);

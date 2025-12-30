@@ -1,7 +1,9 @@
 import type { ContentPart } from "../types/index.js";
 
 export function extractContent(content: string | ContentPart[]): string {
-  if (typeof content === "string") return content;
+  if (typeof content === "string") {
+    return content;
+  }
 
   const parts: string[] = [];
   for (const part of content) {
@@ -12,7 +14,9 @@ export function extractContent(content: string | ContentPart[]): string {
         parts.push(part.content);
       } else if (Array.isArray(part.content)) {
         for (const c of part.content) {
-          if (c.type === "text") parts.push(c.text);
+          if (c.type === "text") {
+            parts.push(c.text);
+          }
         }
       }
     }

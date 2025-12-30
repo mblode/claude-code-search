@@ -7,21 +7,40 @@ export interface LoadOptions {
   filters: { role?: "user" | "assistant" };
 }
 
-export async function loadMessages(options: LoadOptions): Promise<ParsedMessage[]> {
+export async function loadMessages(
+  options: LoadOptions
+): Promise<ParsedMessage[]> {
   const messages: ParsedMessage[] = [];
 
-  for await (const { filePath, projectDir } of scanAllFiles({ projectFilter: options.projectFilter })) {
+  for await (const { filePath, projectDir } of scanAllFiles({
+    projectFilter: options.projectFilter,
+  })) {
     for await (const line of streamLines(filePath)) {
       const record = parseJSONL(line);
-      if (!record) continue;
-      if (options.filters.role && record.type !== options.filters.role) continue;
+      if (!record) {
+        continue;
+      }
+      if (options.filters.role && record.type !== options.filters.role) {
+        continue;
+      }
 
-      const message = parseMessage(record, projectDir, filePath, options.filters.role === "user");
-      if (!message) continue;
+      const message = parseMessage(
+        record,
+        projectDir,
+        filePath,
+        options.filters.role === "user"
+      );
+      if (!message) {
+        continue;
+      }
 
       // Additional filtering based on cwd if projectFilter starts with /
-      if (options.projectFilter?.startsWith("/") && message.cwd) {
-        if (!message.cwd.startsWith(options.projectFilter)) continue;
+      if (
+        options.projectFilter?.startsWith("/") &&
+        message.cwd &&
+        !message.cwd.startsWith(options.projectFilter)
+      ) {
+        continue;
       }
 
       messages.push(message);

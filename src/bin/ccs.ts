@@ -1,11 +1,11 @@
-import { createRequire } from "module";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { run } from "../app.js";
 import { loadMessages } from "../services/loader.js";
 import { search } from "../services/matcher.js";
-import { EXIT_CODES, fatal } from "../utils/errors.js";
 import { colorize } from "../utils/color.js";
+import { EXIT_CODES, fatal } from "../utils/errors.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -40,7 +40,10 @@ function parseArgs(args: string[]): CliArgs {
     } else if (arg === "-s" || arg === "--search") {
       i++;
       if (i >= args.length || args[i].startsWith("-")) {
-        fatal("option '-s, --search' requires an argument", EXIT_CODES.INVALID_ARGS);
+        fatal(
+          "option '-s, --search' requires an argument",
+          EXIT_CODES.INVALID_ARGS
+        );
       }
       result.search = args[i];
     } else if (arg === "-j" || arg === "--json") {
@@ -48,17 +51,26 @@ function parseArgs(args: string[]): CliArgs {
     } else if (arg === "-n" || arg === "--limit") {
       i++;
       if (i >= args.length || args[i].startsWith("-")) {
-        fatal("option '-n, --limit' requires an argument", EXIT_CODES.INVALID_ARGS);
+        fatal(
+          "option '-n, --limit' requires an argument",
+          EXIT_CODES.INVALID_ARGS
+        );
       }
-      const limit = parseInt(args[i], 10);
-      if (isNaN(limit) || limit <= 0) {
-        fatal("option '-n, --limit' must be a positive integer", EXIT_CODES.INVALID_ARGS);
+      const limit = Number.parseInt(args[i], 10);
+      if (Number.isNaN(limit) || limit <= 0) {
+        fatal(
+          "option '-n, --limit' must be a positive integer",
+          EXIT_CODES.INVALID_ARGS
+        );
       }
       result.limit = limit;
     } else if (arg === "-p" || arg === "--project") {
       i++;
       if (i >= args.length || args[i].startsWith("-")) {
-        fatal("option '-p, --project' requires an argument", EXIT_CODES.INVALID_ARGS);
+        fatal(
+          "option '-p, --project' requires an argument",
+          EXIT_CODES.INVALID_ARGS
+        );
       }
       result.project = args[i];
     } else if (arg === "-h" || arg === "--help") {
@@ -156,7 +168,9 @@ async function runNonInteractive(cliArgs: CliArgs): Promise<number> {
       const date = msg.timestamp.toISOString().slice(0, 10);
       const project = msg.projectName || "unknown";
       const preview = msg.content.slice(0, 200).replace(/\n/g, " ");
-      console.log(`${colorize(`[${date}]`, "gray")} ${colorize(`[${project}]`, "cyan")} ${preview}`);
+      console.log(
+        `${colorize(`[${date}]`, "gray")} ${colorize(`[${project}]`, "cyan")} ${preview}`
+      );
     }
   }
 
@@ -177,13 +191,13 @@ if (args.help) {
     .catch((err) => {
       fatal(err.message || "An error occurred");
     });
-} else if (!isTTY()) {
+} else if (isTTY()) {
+  run(process.cwd(), args.project || undefined);
+} else {
   // Fall back to list mode when not in a TTY (e.g., piped)
   runNonInteractive({ ...args, list: true })
     .then((code) => process.exit(code))
     .catch((err) => {
       fatal(err.message || "An error occurred");
     });
-} else {
-  run(process.cwd(), args.project || undefined);
 }
