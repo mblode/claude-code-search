@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { run } from "../app.js";
+import { run } from "../index.js";
 import { loadMessages } from "../services/loader.js";
 import { search } from "../services/matcher.js";
 import { colorize } from "../utils/color.js";
@@ -22,6 +22,93 @@ interface CliArgs {
   version: boolean;
 }
 
+function getNextArg(args: string[], index: number, optionName: string): string {
+  const nextIndex = index + 1;
+  if (nextIndex >= args.length || args[nextIndex].startsWith("-")) {
+    fatal(
+      `option '${optionName}' requires an argument`,
+      EXIT_CODES.INVALID_ARGS
+    );
+  }
+  return args[nextIndex];
+}
+
+function parseLimit(value: string): number {
+  const limit = Number.parseInt(value, 10);
+  if (Number.isNaN(limit) || limit <= 0) {
+    fatal(
+      "option '-n, --limit' must be a positive integer",
+      EXIT_CODES.INVALID_ARGS
+    );
+  }
+  return limit;
+}
+
+function handleSearchArg(args: string[], i: number, result: CliArgs): number {
+  result.search = getNextArg(args, i, "-s, --search");
+  return i + 1;
+}
+
+function handleLimitArg(args: string[], i: number, result: CliArgs): number {
+  const value = getNextArg(args, i, "-n, --limit");
+  result.limit = parseLimit(value);
+  return i + 1;
+}
+
+function handleProjectArg(args: string[], i: number, result: CliArgs): number {
+  result.project = getNextArg(args, i, "-p, --project");
+  return i + 1;
+}
+
+function isFlagMatch(arg: string, short: string, long: string): boolean {
+  return arg === short || arg === long;
+}
+
+function processArgument(
+  arg: string,
+  args: string[],
+  i: number,
+  result: CliArgs
+): number {
+  if (isFlagMatch(arg, "-l", "--list")) {
+    result.list = true;
+    return i;
+  }
+
+  if (isFlagMatch(arg, "-s", "--search")) {
+    return handleSearchArg(args, i, result);
+  }
+
+  if (isFlagMatch(arg, "-j", "--json")) {
+    result.json = true;
+    return i;
+  }
+
+  if (isFlagMatch(arg, "-n", "--limit")) {
+    return handleLimitArg(args, i, result);
+  }
+
+  if (isFlagMatch(arg, "-p", "--project")) {
+    return handleProjectArg(args, i, result);
+  }
+
+  if (isFlagMatch(arg, "-h", "--help")) {
+    result.help = true;
+    return i;
+  }
+
+  if (isFlagMatch(arg, "-v", "--version")) {
+    result.version = true;
+    return i;
+  }
+
+  if (arg.startsWith("-")) {
+    fatal(`unknown option: ${arg}`, EXIT_CODES.INVALID_ARGS);
+  }
+
+  return i;
+}
+
 function parseArgs(args: string[]): CliArgs {
   const result: CliArgs = {
     list: false,
@@ -34,52 +121,7 @@ function parseArgs(args: string[]): CliArgs {
   };
 
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === "-l" || arg === "--list") {
-      result.list = true;
-    } else if (arg === "-s" || arg === "--search") {
-      i++;
-      if (i >= args.length || args[i].startsWith("-")) {
-        fatal(
-          "option '-s, --search' requires an argument",
-          EXIT_CODES.INVALID_ARGS
-        );
-      }
-      result.search = args[i];
-    } else if (arg === "-j" || arg === "--json") {
-      result.json = true;
-    } else if (arg === "-n" || arg === "--limit") {
-      i++;
-      if (i >= args.length || args[i].startsWith("-")) {
-        fatal(
-          "option '-n, --limit' requires an argument",
-          EXIT_CODES.INVALID_ARGS
-        );
-      }
-      const limit = Number.parseInt(args[i], 10);
-      if (Number.isNaN(limit) || limit <= 0) {
-        fatal(
-          "option '-n, --limit' must be a positive integer",
-          EXIT_CODES.INVALID_ARGS
-        );
-      }
-      result.limit = limit;
-    } else if (arg === "-p" || arg === "--project") {
-      i++;
-      if (i >= args.length || args[i].startsWith("-")) {
-        fatal(
-          "option '-p, --project' requires an argument",
-          EXIT_CODES.INVALID_ARGS
-        );
-      }
-      result.project = args[i];
-    } else if (arg === "-h" || arg === "--help") {
-      result.help = true;
-    } else if (arg === "-v" || arg === "--version") {
-      result.version = true;
-    } else if (arg.startsWith("-")) {
-      fatal(`unknown option: ${arg}`, EXIT_CODES.INVALID_ARGS);
-    }
+    i = processArgument(args[i], args, i, result);
   }
 
   return result;

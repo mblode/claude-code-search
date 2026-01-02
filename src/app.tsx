@@ -1,5 +1,5 @@
 import clipboard from "clipboardy";
-import { Box, render, Text, useApp, useInput, useStdout } from "ink";
+import { Box, Text, useApp, useInput, useStdout } from "ink";
 import TextInput from "ink-text-input";
 import { useEffect, useState } from "react";
 import { HighlightedText } from "./components/highlighted-text.js";
@@ -19,7 +19,7 @@ interface AppProps {
 
 const DIGIT_REGEX = /^[1-9]$/;
 
-function App({ cwd, initialProjectFilter }: AppProps) {
+export function App({ cwd, initialProjectFilter }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
 
@@ -69,21 +69,58 @@ function App({ cwd, initialProjectFilter }: AppProps) {
     }
   };
 
-  useInput((input, key) => {
+  const handleNavigationKey = (key: {
+    upArrow?: boolean;
+    downArrow?: boolean;
+  }) => {
     if (key.upArrow) {
       setSelectedIndex((i) => Math.max(0, i - 1));
-    } else if (key.downArrow) {
+      return true;
+    }
+    if (key.downArrow) {
       setSelectedIndex((i) => Math.min(results.length - 1, i + 1));
-    } else if (key.return) {
-      selectItem(selectedIndex);
-    } else if (
-      DIGIT_REGEX.test(input) &&
-      Number.parseInt(input, 10) - 1 < results.length
-    ) {
-      selectItem(Number.parseInt(input, 10) - 1);
-    } else if ((key.ctrl && input === "r") || (key.tab && key.shift)) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleDigitInput = (input: string) => {
+    if (DIGIT_REGEX.test(input)) {
+      const index = Number.parseInt(input, 10) - 1;
+      if (index < results.length) {
+        selectItem(index);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const handleToggleMode = (
+    key: { ctrl?: boolean; tab?: boolean; shift?: boolean },
+    input: string
+  ) => {
+    if ((key.ctrl && input === "r") || (key.tab && key.shift)) {
       setFilterMode((m) => (m === "global" ? "directory" : "global"));
-    } else if (key.escape) {
+      return true;
+    }
+    return false;
+  };
+
+  useInput((input, key) => {
+    if (handleNavigationKey(key)) {
+      return;
+    }
+    if (key.return) {
+      selectItem(selectedIndex);
+      return;
+    }
+    if (handleDigitInput(input)) {
+      return;
+    }
+    if (handleToggleMode(key, input)) {
+      return;
+    }
+    if (key.escape) {
       exit();
     }
   });
@@ -201,8 +238,4 @@ function App({ cwd, initialProjectFilter }: AppProps) {
       </Box>
     </Box>
   );
-}
-
-export function run(cwd: string, projectFilter?: string) {
-  render(<App cwd={cwd} initialProjectFilter={projectFilter} />);
 }

@@ -1,5 +1,33 @@
 import type { ContentPart } from "../types/index.js";
 
+function extractTextFromToolResult(content: string | ContentPart[]): string[] {
+  const parts: string[] = [];
+
+  if (typeof content === "string") {
+    parts.push(content);
+  } else if (Array.isArray(content)) {
+    for (const c of content) {
+      if (c.type === "text") {
+        parts.push(c.text);
+      }
+    }
+  }
+
+  return parts;
+}
+
+function extractFromContentPart(part: ContentPart): string[] {
+  if (part.type === "text") {
+    return [part.text];
+  }
+
+  if (part.type === "tool_result") {
+    return extractTextFromToolResult(part.content);
+  }
+
+  return [];
+}
+
 export function extractContent(content: string | ContentPart[]): string {
   if (typeof content === "string") {
     return content;
@@ -7,19 +35,7 @@ export function extractContent(content: string | ContentPart[]): string {
 
   const parts: string[] = [];
   for (const part of content) {
-    if (part.type === "text") {
-      parts.push(part.text);
-    } else if (part.type === "tool_result") {
-      if (typeof part.content === "string") {
-        parts.push(part.content);
-      } else if (Array.isArray(part.content)) {
-        for (const c of part.content) {
-          if (c.type === "text") {
-            parts.push(c.text);
-          }
-        }
-      }
-    }
+    parts.push(...extractFromContentPart(part));
   }
   return parts.join("\n");
 }

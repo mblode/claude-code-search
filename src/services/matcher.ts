@@ -2,6 +2,72 @@ import type { ParsedMessage, SearchResult } from "../types/index.js";
 
 const WHITESPACE_REGEX = /\s+/;
 
+const MAX_FREQUENCY_BONUS = 25;
+const FREQUENCY_MULTIPLIER = 5;
+
+function countTermOccurrences(lower: string, terms: string[]): number {
+  return terms.reduce((sum, term) => {
+    let count = 0;
+    let idx = lower.indexOf(term);
+    while (idx !== -1) {
+      count++;
+      idx = lower.indexOf(term, idx + 1);
+    }
+    return sum + count;
+  }, 0);
+}
+
+function calculatePositionBonus(positions: Set<number>): number {
+  const firstPosition = Math.min(...positions);
+  if (firstPosition < 50) {
+    return 15;
+  }
+  if (firstPosition < 150) {
+    return 10;
+  }
+  if (firstPosition < 300) {
+    return 5;
+  }
+  return 0;
+}
+
+function calculateProximityBonus(
+  terms: string[],
+  positions: Set<number>
+): number {
+  if (terms.length <= 1 || positions.size === 0) {
+    return 0;
+  }
+
+  const sortedPos = [...positions].sort((a, b) => a - b);
+  const lastPos = sortedPos.at(-1);
+  if (lastPos === undefined) {
+    return 0;
+  }
+
+  const span = lastPos - sortedPos[0];
+  const idealSpan =
+    terms.reduce((sum, t) => sum + t.length, 0) + terms.length - 1;
+
+  if (span <= idealSpan * 2) {
+    return 15;
+  }
+  if (span <= idealSpan * 5) {
+    return 10;
+  }
+  return 0;
+}
+
+function calculateLengthBonus(contentLength: number): number {
+  if (contentLength < 200) {
+    return 5;
+  }
+  if (contentLength < 500) {
+    return 3;
+  }
+  return 0;
+}
+
 /**
  * Calculate relevance score for a search match
  */
@@ -14,26 +80,14 @@ function calculateScore(
   let score = 50; // Base score for matching all terms
 
   // 1. Term frequency bonus (capped at 25 points)
-  const termOccurrences = terms.reduce((sum, term) => {
-    let count = 0;
-    let idx = lower.indexOf(term);
-    while (idx !== -1) {
-      count++;
-      idx = lower.indexOf(term, idx + 1);
-    }
-    return sum + count;
-  }, 0);
-  score += Math.min(termOccurrences * 5, 25);
+  const termOccurrences = countTermOccurrences(lower, terms);
+  score += Math.min(
+    termOccurrences * FREQUENCY_MULTIPLIER,
+    MAX_FREQUENCY_BONUS
+  );
 
   // 2. Position bonus: terms near start score higher
-  const firstPosition = Math.min(...positions);
-  if (firstPosition < 50) {
-    score += 15;
-  } else if (firstPosition < 150) {
-    score += 10;
-  } else if (firstPosition < 300) {
-    score += 5;
-  }
+  score += calculatePositionBonus(positions);
 
   // 3. Exact phrase match bonus
   const query = terms.join(" ");
@@ -42,27 +96,10 @@ function calculateScore(
   }
 
   // 4. Term proximity bonus (for multi-term queries)
-  if (terms.length > 1 && positions.size > 0) {
-    const sortedPos = [...positions].sort((a, b) => a - b);
-    const lastPos = sortedPos.at(-1);
-    if (lastPos !== undefined) {
-      const span = lastPos - sortedPos[0];
-      const idealSpan =
-        terms.reduce((sum, t) => sum + t.length, 0) + terms.length - 1;
-      if (span <= idealSpan * 2) {
-        score += 15;
-      } else if (span <= idealSpan * 5) {
-        score += 10;
-      }
-    }
-  }
+  score += calculateProximityBonus(terms, positions);
 
   // 5. Content length normalization (prefer concise matches)
-  if (content.length < 200) {
-    score += 5;
-  } else if (content.length < 500) {
-    score += 3;
-  }
+  score += calculateLengthBonus(content.length);
 
   return score;
 }

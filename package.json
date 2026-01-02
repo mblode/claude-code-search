@@ -37,7 +37,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "typecheck": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -68,7 +68,7 @@
     "lint-staged": "^16.2.7",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "ultracite": "^6.5.0"
+    "ultracite": "^7.0.5"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
