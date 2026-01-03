@@ -1,6 +1,6 @@
 {
   "name": "claude-code-search",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Interactive TUI for searching Claude Code session history",
   "author": "Matthew Blode",
   "license": "MIT",
