@@ -58,9 +58,29 @@ Options:
   -j, --json            Output as JSON (use with -l or -s)
   -n, --limit <n>       Limit number of results (default: 100)
   -p, --project <path>  Filter by project path
+  --projects-dir <dir>  Projects directory (default: ~/.claude/projects)
   -v, --version         Show version number
   -h, --help            Show help
 ```
+
+## Configuration
+
+### Custom Projects Directory
+
+By default, ccs reads from `~/.claude/projects/`. You can override this to use a different location (e.g., a synced backup):
+
+**CLI flag** (highest precedence):
+```bash
+ccs --projects-dir ~/backup/claude/projects
+```
+
+**Environment variable**:
+```bash
+export CCS_PROJECT_DIR=~/backup/claude/projects
+ccs
+```
+
+The CLI flag takes precedence over the environment variable.
 
 ## Keyboard Shortcuts
 
@@ -84,7 +104,7 @@ Options:
 ## Requirements
 
 - Node.js >= 18
-- Claude Code (reads from `~/.claude/projects/`)
+- Claude Code session data (defaults to `~/.claude/projects/`, configurable via `--projects-dir` or `CCS_PROJECT_DIR`)
 
 ## License
 

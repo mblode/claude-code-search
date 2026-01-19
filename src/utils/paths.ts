@@ -1,9 +1,3 @@
-import { homedir } from "node:os";
-import { join } from "node:path";
-
-export const CLAUDE_DIR = join(homedir(), ".claude");
-export const PROJECTS_DIR = join(CLAUDE_DIR, "projects");
-
 const LEADING_HYPHEN_REGEX = /^-/;
 const HYPHEN_REGEX = /-/g;
 
