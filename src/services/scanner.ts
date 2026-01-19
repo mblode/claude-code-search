@@ -2,7 +2,8 @@ import { createReadStream } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
-import { matchesProject, PROJECTS_DIR } from "../utils/paths.js";
+import { getProjectsDir } from "../utils/config.js";
+import { matchesProject } from "../utils/paths.js";
 
 export interface ScanOptions {
   projectFilter?: string;
@@ -11,7 +12,7 @@ export interface ScanOptions {
 
 async function discoverProjects(projectFilter?: string): Promise<string[]> {
   try {
-    const entries = await readdir(PROJECTS_DIR, { withFileTypes: true });
+    const entries = await readdir(getProjectsDir(), { withFileTypes: true });
     return entries
       .filter((e) => e.isDirectory())
       .map((e) => e.name)
@@ -26,11 +27,12 @@ async function discoverSessionFiles(
   sessionFilter?: string
 ): Promise<string[]> {
   try {
-    const entries = await readdir(join(PROJECTS_DIR, projectDir));
+    const projectsDir = getProjectsDir();
+    const entries = await readdir(join(projectsDir, projectDir));
     return entries
       .filter((f) => f.endsWith(".jsonl"))
       .filter((f) => !sessionFilter || f.includes(sessionFilter))
-      .map((f) => join(PROJECTS_DIR, projectDir, f));
+      .map((f) => join(projectsDir, projectDir, f));
   } catch {
     return [];
   }
