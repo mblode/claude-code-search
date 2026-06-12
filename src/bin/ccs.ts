@@ -5,6 +5,7 @@ import { run } from "../index.js";
 import { loadMessages } from "../services/loader.js";
 import { search } from "../services/matcher.js";
 import { colorize } from "../utils/color.js";
+import { getDefaultProjectsDir, initConfig } from "../utils/config.js";
 import { EXIT_CODES, fatal } from "../utils/errors.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,7 @@ interface CliArgs {
   limit: number;
   help: boolean;
   project: string | null;
+  projectsDir: string | null;
   version: boolean;
 }
 
@@ -60,6 +62,15 @@ function handleProjectArg(args: string[], i: number, result: CliArgs): number {
   return i + 1;
 }
 
+function handleProjectsDirArg(
+  args: string[],
+  i: number,
+  result: CliArgs
+): number {
+  result.projectsDir = getNextArg(args, i, "--projects-dir");
+  return i + 1;
+}
+
 function isFlagMatch(arg: string, short: string, long: string): boolean {
   return arg === short || arg === long;
 }
@@ -92,6 +103,10 @@ function processArgument(
     return handleProjectArg(args, i, result);
   }
 
+  if (arg === "--projects-dir") {
+    return handleProjectsDirArg(args, i, result);
+  }
+
   if (isFlagMatch(arg, "-h", "--help")) {
     result.help = true;
     return i;
@@ -117,6 +132,7 @@ function parseArgs(args: string[]): CliArgs {
     limit: 100,
     help: false,
     project: null,
+    projectsDir: null,
     version: false,
   };
 
@@ -128,6 +144,7 @@ function parseArgs(args: string[]): CliArgs {
 }
 
 function printHelp() {
+  const defaultDir = getDefaultProjectsDir();
   console.log(`ccs - Claude Code Search
 
 Usage: ccs [options]
@@ -138,8 +155,12 @@ Options:
   -j, --json            Output as JSON (use with -l or -s)
   -n, --limit <n>       Limit number of results (default: 100)
   -p, --project <path>  Filter by project path
+  --projects-dir <dir>  Projects directory (default: ${defaultDir})
   -v, --version         Show version number
   -h, --help            Show this help
+
+Environment Variables:
+  CCS_PROJECT_DIR       Override the projects directory (--projects-dir takes precedence)
 
 Interactive Mode:
   When launched without arguments, ccs starts an interactive TUI.
@@ -159,6 +180,7 @@ Examples:
   ccs -s "test" -j      Search and output JSON
   ccs -l -n 50          List last 50 prompts
   ccs -p /path/to/proj  Filter by project path
+  ccs --projects-dir ~/backup/claude/projects  Use alternate directory
 `);
 }
 
@@ -220,6 +242,9 @@ async function runNonInteractive(cliArgs: CliArgs): Promise<number> {
 }
 
 const args = parseArgs(process.argv.slice(2));
+
+// Initialize config with CLI args (precedence: CLI > env > default)
+initConfig({ projectsDir: args.projectsDir || undefined });
 
 if (args.help) {
   printHelp();
