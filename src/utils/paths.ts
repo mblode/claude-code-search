@@ -10,7 +10,7 @@ export function extractProjectName(dirname: string): string {
   const codeIndex = parts.findIndex(
     (p) => p.toLowerCase() === "code" || p.toLowerCase() === "projects"
   );
-  if (codeIndex >= 0 && codeIndex < parts.length - 1) {
+  if (codeIndex !== -1 && codeIndex < parts.length - 1) {
     return parts.slice(codeIndex + 1).join("/");
   }
   return parts.slice(-2).join("/");

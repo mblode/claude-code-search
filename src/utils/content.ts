@@ -42,5 +42,5 @@ export function extractContent(content: string | ContentPart[]): string {
 
 export function cleanText(text: string): string {
   const firstLine = text.split("\n").find((l) => l.trim()) || "";
-  return firstLine.replace(/\s+/g, " ").trim();
+  return firstLine.replaceAll(/\s+/g, " ").trim();
 }

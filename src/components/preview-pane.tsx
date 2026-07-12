@@ -1,4 +1,5 @@
 import { Box, Text } from "ink";
+
 import type { ParsedMessage } from "../types/index.js";
 import { compactTime } from "../utils/time.js";
 

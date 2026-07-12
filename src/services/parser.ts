@@ -60,15 +60,15 @@ export function parseMessage(
   }
 
   return {
-    type: record.type as "user" | "assistant",
-    timestamp: new Date(record.timestamp),
-    uuid: record.uuid,
-    sessionId: record.sessionId,
-    cwd: record.cwd,
-    gitBranch: record.gitBranch,
     content: extracted,
-    projectPath: decodeProjectPath(projectDir),
-    projectName: extractProjectName(projectDir),
+    cwd: record.cwd,
     filePath,
+    gitBranch: record.gitBranch,
+    projectName: extractProjectName(projectDir),
+    projectPath: decodeProjectPath(projectDir),
+    sessionId: record.sessionId,
+    timestamp: new Date(record.timestamp),
+    type: record.type as "user" | "assistant",
+    uuid: record.uuid,
   };
 }

@@ -39,7 +39,7 @@ function calculateProximityBonus(
     return 0;
   }
 
-  const sortedPos = [...positions].sort((a, b) => a - b);
+  const sortedPos = [...positions].toSorted((a, b) => a - b);
   const lastPos = sortedPos.at(-1);
   if (lastPos === undefined) {
     return 0;
@@ -111,11 +111,10 @@ export function search(
 ): SearchResult[] {
   if (!query.trim()) {
     // No query: return most recent
-    return messages
-      .slice()
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    return [...messages]
+      .toSorted((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, limit)
-      .map((item) => ({ item, score: 0, positions: new Set<number>() }));
+      .map((item) => ({ item, positions: new Set<number>(), score: 0 }));
   }
 
   const terms = query.toLowerCase().split(WHITESPACE_REGEX).filter(Boolean);
@@ -139,13 +138,13 @@ export function search(
     }
 
     const score = calculateScore(item.content, terms, positions);
-    results.push({ item, score, positions });
+    results.push({ item, positions, score });
   }
 
   // Primary sort: score descending
   // Secondary sort: timestamp descending (for equal scores)
   return results
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       const scoreDiff = b.score - a.score;
       if (scoreDiff !== 0) {
         return scoreDiff;

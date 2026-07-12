@@ -15,7 +15,7 @@ export interface ToolUsePart {
 export interface ToolResultPart {
   type: "tool_result";
   tool_use_id: string;
-  content: string | Array<{ type: "text"; text: string }>;
+  content: string | { type: "text"; text: string }[];
   is_error?: boolean;
 }
 

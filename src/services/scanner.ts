@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
+
 import { getProjectsDir } from "../utils/config.js";
 import { matchesProject } from "../utils/paths.js";
 
@@ -40,8 +41,8 @@ async function discoverSessionFiles(
 
 export async function* streamLines(filePath: string): AsyncGenerator<string> {
   const rl = createInterface({
-    input: createReadStream(filePath, { encoding: "utf-8" }),
     crlfDelay: Number.POSITIVE_INFINITY,
+    input: createReadStream(filePath, { encoding: "utf-8" }),
   });
   for await (const line of rl) {
     if (line.trim()) {

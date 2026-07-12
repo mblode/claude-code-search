@@ -21,12 +21,12 @@ export function supportsColor(): boolean {
  * ANSI color codes for terminal output
  */
 export const colors = {
-  reset: "\x1b[0m",
-  gray: "\x1b[90m",
   cyan: "\x1b[36m",
+  gray: "\x1b[90m",
   green: "\x1b[32m",
-  red: "\x1b[31m",
   magenta: "\x1b[35m",
+  red: "\x1b[31m",
+  reset: "\x1b[0m",
 } as const;
 
 /**

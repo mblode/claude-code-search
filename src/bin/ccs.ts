@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+
 import { run } from "../index.js";
 import { loadMessages } from "../services/loader.js";
 import { search } from "../services/matcher.js";
@@ -8,8 +8,7 @@ import { colorize } from "../utils/color.js";
 import { getDefaultProjectsDir, initConfig } from "../utils/config.js";
 import { EXIT_CODES, fatal } from "../utils/errors.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = import.meta.dirname;
 const require = createRequire(import.meta.url);
 const pkg = require(join(__dirname, "..", "package.json"));
 
@@ -126,13 +125,13 @@ function processArgument(
 
 function parseArgs(args: string[]): CliArgs {
   const result: CliArgs = {
-    list: false,
-    search: null,
+    help: false,
     json: false,
     limit: 100,
-    help: false,
+    list: false,
     project: null,
     projectsDir: null,
+    search: null,
     version: false,
   };
 
@@ -190,8 +189,8 @@ function isTTY(): boolean {
 
 async function runNonInteractive(cliArgs: CliArgs): Promise<number> {
   const messages = await loadMessages({
-    projectFilter: cliArgs.project || undefined,
     filters: { role: "user" },
+    projectFilter: cliArgs.project || undefined,
   });
 
   if (messages.length === 0) {
@@ -217,11 +216,11 @@ async function runNonInteractive(cliArgs: CliArgs): Promise<number> {
       JSON.stringify(
         output.map((m) => ({
           content: m.content,
-          timestamp: m.timestamp.toISOString(),
-          project: m.projectName,
-          projectPath: m.projectPath,
           cwd: m.cwd,
           gitBranch: m.gitBranch,
+          project: m.projectName,
+          projectPath: m.projectPath,
+          timestamp: m.timestamp.toISOString(),
         })),
         null,
         2
@@ -231,7 +230,7 @@ async function runNonInteractive(cliArgs: CliArgs): Promise<number> {
     for (const msg of output) {
       const date = msg.timestamp.toISOString().slice(0, 10);
       const project = msg.projectName || "unknown";
-      const preview = msg.content.slice(0, 200).replace(/\n/g, " ");
+      const preview = msg.content.slice(0, 200).replaceAll("\n", " ");
       console.log(
         `${colorize(`[${date}]`, "gray")} ${colorize(`[${project}]`, "cyan")} ${preview}`
       );
@@ -255,8 +254,8 @@ if (args.help) {
 } else if (args.list || args.search !== null) {
   runNonInteractive(args)
     .then((code) => process.exit(code))
-    .catch((err) => {
-      fatal(err.message || "An error occurred");
+    .catch((error) => {
+      fatal(error.message || "An error occurred");
     });
 } else if (isTTY()) {
   run(process.cwd(), args.project || undefined);
@@ -264,7 +263,7 @@ if (args.help) {
   // Fall back to list mode when not in a TTY (e.g., piped)
   runNonInteractive({ ...args, list: true })
     .then((code) => process.exit(code))
-    .catch((err) => {
-      fatal(err.message || "An error occurred");
+    .catch((error) => {
+      fatal(error.message || "An error occurred");
     });
 }

@@ -72,5 +72,7 @@ export async function loadMessages(
     }
   }
 
-  return messages.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  return messages.toSorted(
+    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+  );
 }

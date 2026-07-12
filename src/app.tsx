@@ -2,6 +2,7 @@ import clipboard from "clipboardy";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
 import TextInput from "ink-text-input";
 import { useEffect, useState } from "react";
+
 import { HighlightedText } from "./components/highlighted-text.js";
 import { PreviewPane } from "./components/preview-pane.js";
 import { loadMessages } from "./services/loader.js";
@@ -38,9 +39,9 @@ export function App({ cwd, initialProjectFilter }: AppProps) {
     setIsLoading(true);
     setLoadError(null);
     loadMessages({
+      filters: { role: "user" },
       projectFilter:
         filterMode === "directory" ? initialProjectFilter || cwd : undefined,
-      filters: { role: "user" },
     })
       .then((loaded) => {
         setMessages(loaded);
