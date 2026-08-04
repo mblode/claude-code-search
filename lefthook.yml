@@ -1,7 +1,11 @@
 pre-commit:
   parallel: true
   jobs:
+    # `--no-error-on-unmatched-pattern` is load-bearing: oxlint lints neither
+    # JSON nor CSS and exits 1 when the staged set contains only those, so a
+    # dependency bump or a CSS-only change failed this hook outright. oxfmt
+    # still formats them.
     - name: ultracite
       glob: "*.{js,jsx,ts,tsx,json,jsonc,css}"
-      run: npx ultracite fix {staged_files}
+      run: npx ultracite fix --no-error-on-unmatched-pattern {staged_files}
       stage_fixed: true
