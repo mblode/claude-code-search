@@ -1,15 +1,23 @@
-# ccs - Claude Code Search
+<div align="center">
 
-[![npm version](https://img.shields.io/npm/v/claude-code-search.svg)](https://www.npmjs.com/package/claude-code-search)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# Claude Code Search
 
-Like [fzf](https://github.com/junegunn/fzf) or [atuin](https://github.com/atuinsh/atuin), but for your Claude Code prompts.
+**Fuzzy-search every prompt you have written in Claude Code and copy one back to your clipboard**
 
-![ccs example](./example.png)
+Like [fzf](https://github.com/junegunn/fzf) or [atuin](https://github.com/atuinsh/atuin), but for the prompts buried across your past sessions.
 
-## Why?
+<p align="center">
+  <a href="https://www.npmjs.com/package/claude-code-search">
+    <img src="https://img.shields.io/npm/v/claude-code-search?style=flat&colorA=000000&colorB=000000" />
+  </a>
+  <a href="https://github.com/mblode/claude-code-search/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/mblode/claude-code-search?style=flat&colorA=000000&colorB=000000" />
+  </a>
+</p>
 
-Your best prompts are buried across dozens of Claude Code sessions. This tool lets you instantly search and reuse them instead of rewriting from scratch.
+</div>
+
+![ccs searching a prompt history](./example.png)
 
 ## Install
 
@@ -17,95 +25,68 @@ Your best prompts are buried across dozens of Claude Code sessions. This tool le
 npm install -g claude-code-search
 ```
 
-## Usage
+## Quickstart
 
 ```bash
-ccs                     # Launch interactive TUI
-ccs -l                  # List recent prompts
-ccs -s "refactor"       # Search for "refactor"
-ccs -l -j               # Output as JSON
-ccs -l -n 50            # List last 50 prompts
-ccs -p /path/to/proj    # Filter by project path
-```
-
-Select a prompt and it's copied to your clipboard, ready to paste.
-
-### Pipe to Claude
-
-Extract insights from your prompt history:
-
-```bash
-ccs -l | claude "what patterns do you see in how I prompt?"
-ccs -s "refactor" -j | claude "summarize these prompts"
-```
-
-## Features
-
-- **Fuzzy search** - Find prompts by any words they contain
-- **Relevance ranking** - Results sorted by match quality, not just date
-- **Split-pane preview** - See full content before selecting
-- **Quick jump** - Press 1-9 to instantly select
-- **Filter modes** - Search globally or within current directory
-- **Non-interactive mode** - Use with `-l` or `-s` for scripting
-- **Color support** - Respects `NO_COLOR` and `FORCE_COLOR`
-
-## CLI Options
-
-```
-Options:
-  -l, --list            List all prompts (non-interactive)
-  -s, --search <query>  Search prompts with query (non-interactive)
-  -j, --json            Output as JSON (use with -l or -s)
-  -n, --limit <n>       Limit number of results (default: 100)
-  -p, --project <path>  Filter by project path
-  --projects-dir <dir>  Projects directory (default: ~/.claude/projects)
-  -v, --version         Show version number
-  -h, --help            Show help
-```
-
-## Configuration
-
-### Custom Projects Directory
-
-By default, ccs reads from `~/.claude/projects/`. You can override this to use a different location (e.g., a synced backup):
-
-**CLI flag** (highest precedence):
-```bash
-ccs --projects-dir ~/backup/claude/projects
-```
-
-**Environment variable**:
-```bash
-export CCS_PROJECT_DIR=~/backup/claude/projects
 ccs
 ```
 
-The CLI flag takes precedence over the environment variable.
+Type to filter. Results rank by match quality rather than date, the preview pane shows the full prompt, and `Enter` copies the selected one to your clipboard and prints it to stdout.
 
-## Keyboard Shortcuts
+The same search runs non-interactively, so you can feed your own history back into Claude:
 
-| Key | Action |
-|-----|--------|
-| `↑` / `↓` or `j` / `k` | Navigate results |
-| `1-9` | Quick jump to result |
-| `Enter` | Copy & exit |
-| `Ctrl+R` / `Shift+Tab` | Toggle global/directory filter |
-| `Esc` / `Ctrl+C` | Quit |
+```bash
+# Search and print the matches
+ccs -s "refactor"
 
-## Exit Codes
+# Pipe the last 50 prompts into Claude
+ccs -l -n 50 | claude "what patterns do you see in how I prompt?"
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | General error |
-| 2 | Invalid arguments |
-| 3 | No results found |
+# Machine-readable output for a script
+ccs -s "refactor" -j
+```
 
-## Requirements
+## Options
 
-- Node.js >= 18
-- Claude Code session data (defaults to `~/.claude/projects/`, configurable via `--projects-dir` or `CCS_PROJECT_DIR`)
+| Flag                   | Default              | Description                            |
+| ---------------------- | -------------------- | -------------------------------------- |
+| `-l, --list`           |                      | List prompts and exit, no TUI          |
+| `-s, --search <query>` |                      | Search for a query and exit, no TUI    |
+| `-j, --json`           |                      | Output JSON, for use with `-l` or `-s` |
+| `-n, --limit <n>`      | `100`                | Maximum number of results              |
+| `-p, --project <path>` |                      | Only prompts from one project path     |
+| `--projects-dir <dir>` | `~/.claude/projects` | Where to read session files from       |
+
+## Keyboard shortcuts
+
+| Key                    | Action                                  |
+| ---------------------- | --------------------------------------- |
+| `↑` / `↓`              | Move through results                    |
+| `1` to `9`             | Jump straight to a result and copy it   |
+| `Enter`                | Copy the selected prompt and exit       |
+| `Ctrl+R` / `Shift+Tab` | Toggle global or current-directory only |
+| `Esc` / `Ctrl+C`       | Quit                                    |
+
+## Exit codes
+
+| Code | Meaning           |
+| ---- | ----------------- |
+| `0`  | Success           |
+| `1`  | General error     |
+| `2`  | Invalid arguments |
+| `3`  | No results found  |
+
+## Notes
+
+- Node.js 24 or newer.
+- Sessions are read from `~/.claude/projects/`. Override with `--projects-dir` or `CCS_PROJECT_DIR`, and the flag wins over the environment variable.
+- Colour follows `NO_COLOR` and `FORCE_COLOR`, and drops out when stdout is not a terminal.
+- Your history is only read, never written to.
 
 ## License
 
-MIT - Matthew Blode
+MIT
+
+---
+
+Crafted by [<img src="https://blode.co/avatar-circle.png" width="20" align="top" />](https://blode.co) [Matthew Blode](https://blode.co)
