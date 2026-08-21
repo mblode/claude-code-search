@@ -1,5 +1,5 @@
 import type { JSONLRecord, ParsedMessage } from "../types/index.js";
-import { extractContent } from "../utils/content.js";
+import { extractContent, extractUserPrompt } from "../utils/content.js";
 import { decodeProjectPath, extractProjectName } from "../utils/paths.js";
 
 export function parseJSONL(line: string): JSONLRecord | null {
@@ -20,10 +20,7 @@ function isActualPrompt(record: JSONLRecord): boolean {
   if (record.agentId && record.parentUuid === null) {
     return false;
   }
-  if (typeof record.message.content !== "string") {
-    return false;
-  }
-  return !record.message.content.startsWith("Warmup");
+  return extractUserPrompt(record.message.content) !== null;
 }
 
 function shouldIndex(record: JSONLRecord, userPromptsOnly: boolean): boolean {
@@ -54,19 +51,22 @@ export function parseMessage(
     return null;
   }
 
-  const extracted = extractContent(content);
-  if (!extracted.trim()) {
+  const extracted = userPromptsOnly
+    ? extractUserPrompt(content)
+    : extractContent(content);
+  if (!extracted?.trim()) {
     return null;
   }
 
   return {
     content: extracted,
-    cwd: record.cwd,
+    cwd: record.cwd ?? "",
     filePath,
     gitBranch: record.gitBranch,
     projectName: extractProjectName(projectDir),
     projectPath: decodeProjectPath(projectDir),
     sessionId: record.sessionId,
+    source: "claude",
     timestamp: new Date(record.timestamp),
     type: record.type as "user" | "assistant",
     uuid: record.uuid,

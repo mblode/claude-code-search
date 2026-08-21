@@ -104,17 +104,19 @@ function calculateScore(
   return score;
 }
 
+const EMPTY_POSITIONS = new Set<number>();
+
 export function search(
   messages: ParsedMessage[],
   query: string,
   limit = 100
 ): SearchResult[] {
   if (!query.trim()) {
-    // No query: return most recent
-    return [...messages]
-      .toSorted((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit)
-      .map((item) => ({ item, positions: new Set<number>(), score: 0 }));
+    return messages.slice(0, limit).map((item) => ({
+      item,
+      positions: EMPTY_POSITIONS,
+      score: 0,
+    }));
   }
 
   const terms = query.toLowerCase().split(WHITESPACE_REGEX).filter(Boolean);

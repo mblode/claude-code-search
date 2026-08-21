@@ -36,14 +36,16 @@ export interface MessageContent {
   };
 }
 
+export type MessageSource = "claude" | "codex" | "cursor";
+
 export interface JSONLRecord {
-  type: "user" | "assistant" | "summary" | "file-history-snapshot";
+  type: string;
   timestamp: string;
   uuid: string;
   sessionId: string;
   agentId?: string;
   parentUuid?: string | null;
-  cwd: string;
+  cwd?: string;
   gitBranch?: string;
   slug?: string;
   userType?: string;
@@ -68,6 +70,7 @@ export interface ParsedMessage {
   projectPath: string;
   projectName: string;
   filePath: string;
+  source: MessageSource;
 }
 
 export interface SearchResult {

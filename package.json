@@ -1,12 +1,14 @@
 {
   "name": "claude-code-search",
   "version": "1.2.2",
-  "description": "Interactive TUI for searching Claude Code session history",
+  "description": "Interactive TUI for searching Claude Code, Codex, and Cursor prompt history",
   "keywords": [
     "anthropic",
     "claude",
     "claude-code",
     "cli",
+    "codex",
+    "cursor",
     "history",
     "prompt",
     "search",
@@ -24,52 +26,61 @@
     "url": "git+https://github.com/mblode/claude-code-search.git"
   },
   "bin": {
-    "ccs": "dist/ccs.js"
+    "ccs": "./dist/cli.js"
   },
   "files": [
     "dist",
-    "example.png"
+    "example.png",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly",
+    "build": "tsdown",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "dev": "tsup --watch",
-    "release": "npm run build && changeset publish",
-    "start": "node dist/ccs.js",
-    "prepare": "lefthook install || true",
-    "lint": "ultracite check",
-    "format": "ultracite fix",
+    "check": "ultracite check",
     "check:types": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "dev": "tsdown --watch",
+    "fix": "ultracite fix",
+    "format": "ultracite fix",
+    "lint": "ultracite check",
+    "prepare": "lefthook install || true",
+    "prepublishOnly": "npm run build",
+    "release": "npm run build && changeset publish",
+    "start": "node dist/cli.js",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "clipboardy": "^5.3.1",
+    "commander": "^15.0.0",
     "ink": "^7.1.0",
     "ink-text-input": "^6.0.0",
     "react": "^19.2.7"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
-    "@types/node": "^26.1.1",
+    "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "lefthook": "^2.1.10",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.4",
     "typescript": "7.0.2",
-    "ultracite": "7.9.3"
+    "ultracite": "7.9.3",
+    "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24.11"
   }
 }

@@ -40,6 +40,44 @@ export function extractContent(content: string | ContentPart[]): string {
   return parts.join("\n");
 }
 
+const COMPACTION_CONTINUATION_MARKER =
+  "This session is being continued from a previous conversation";
+
+/** User-prompt text only: strings or `text` parts. Tool-result-only users are empty. */
+export function extractUserPrompt(
+  content: string | ContentPart[]
+): string | null {
+  if (typeof content === "string") {
+    const trimmed = content.trim();
+    if (!trimmed || trimmed.startsWith("Warmup")) {
+      return null;
+    }
+    if (trimmed.startsWith(COMPACTION_CONTINUATION_MARKER)) {
+      return null;
+    }
+    return content;
+  }
+
+  const texts: string[] = [];
+  for (const part of content) {
+    if (part.type === "text" && part.text.trim()) {
+      texts.push(part.text);
+    }
+  }
+  if (texts.length === 0) {
+    return null;
+  }
+  const joined = texts.join("\n");
+  const trimmed = joined.trim();
+  if (trimmed.startsWith("Warmup")) {
+    return null;
+  }
+  if (trimmed.startsWith(COMPACTION_CONTINUATION_MARKER)) {
+    return null;
+  }
+  return joined;
+}
+
 export function cleanText(text: string): string {
   const firstLine = text.split("\n").find((l) => l.trim()) || "";
   return firstLine.replaceAll(/\s+/g, " ").trim();

@@ -1,11 +1,29 @@
+# Two jobs, not one, for two independent reasons.
+#
+# 1. Scope. `npx ultracite fix` with no file arguments formats the WHOLE repo,
+#    so committing one file silently rewrites unrelated files in the working
+#    tree. Passing {staged_files} keeps the fixer to what is being committed.
+#
+# 2. Empty sets. `ultracite fix` runs oxfmt then oxlint, and oxlint exits
+#    non-zero when handed no lintable files. Globbing json/css into the same
+#    job as ts/tsx would therefore fail any JSON-only commit, which is exactly
+#    what the changesets bot produces for "Version Packages", breaking the
+#    release workflow. So lint only what oxlint can lint, and format the rest
+#    with oxfmt directly.
+#
+# md/mdx are absent from both globs on the same reasoning: neither tool handles
+# markdown, so a docs-only commit would hit the identical empty-set failure.
 pre-commit:
   parallel: true
   jobs:
-    # `--no-error-on-unmatched-pattern` is load-bearing: oxlint lints neither
-    # JSON nor CSS and exits 1 when the staged set contains only those, so a
-    # dependency bump or a CSS-only change failed this hook outright. oxfmt
-    # still formats them.
     - name: ultracite
-      glob: "*.{js,jsx,ts,tsx,json,jsonc,css}"
-      run: npx ultracite fix --no-error-on-unmatched-pattern {staged_files}
+      glob: "*.{js,jsx,ts,tsx}"
+      run: npx ultracite fix {staged_files}
+      stage_fixed: true
+    - name: oxfmt
+      glob: "*.{json,jsonc,css}"
+      exclude:
+        - "package-lock.json"
+        - "**/package-lock.json"
+      run: npx oxfmt --write {staged_files}
       stage_fixed: true

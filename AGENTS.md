@@ -1,53 +1,52 @@
 # AGENTS.md — claude-code-search
 
-`ccs`, a terminal UI for searching your own Claude Code prompts across past
-sessions — fzf or atuin, but for prompt history. Published to npm as
-`claude-code-search`.
+`ccs`, a terminal UI for searching your own coding-agent prompts across past
+sessions — fzf or atuin, but for prompt history. Sources: Claude Code, Codex
+CLI, Cursor. Published to npm as `claude-code-search`.
 
 ## Commands
 
 ```bash
-npm run dev            # tsup --watch
-npm run build          # tsup, then tsc --emitDeclarationOnly
-npm run start          # node dist/ccs.js
-npm run lint           # ultracite check (oxlint + oxfmt, not Biome)
-npm run format         # ultracite fix
-npm run check:types    # tsc --noEmit
+npm install        # setup (requires Node >= 24.11)
+npm run dev        # tsdown --watch
+npm run build      # tsdown (CLI + library + dts)
+npm run start      # node dist/cli.js
+npm run lint       # ultracite check (oxlint + oxfmt)
+npm run check      # same as lint
+npm run format     # ultracite fix
+npm run check:types # tsc --noEmit
+npm test           # vitest run --passWithNoTests
 ```
 
-No test runner. `lint` and `check:types` are the gates, and the real check is
-running `npm run build && npm run start` against your own session history.
+Gates: `lint`, `check:types`, `test`. Smoke: `npm run build && npm run start` against your own history.
 
 ## This is a React app that renders to a terminal
 
 The UI is [Ink](https://github.com/vadimdemedes/ink), so `src/app.tsx` and
-`src/components/*.tsx` are React components whose output is text. That has
-consequences worth holding onto:
+`src/components/*.tsx` are React components whose output is text.
 
-- There is no DOM. No `div`, no CSS, no browser API. Layout comes from Ink's
-  `<Box>` flexbox subset; colour comes from `src/utils/color.ts`.
+- There is no DOM. Layout comes from Ink's `<Box>`; colour from `src/utils/color.ts`.
 - Anything written to stdout that is not Ink's render corrupts the frame. Debug
-  to stderr or to a file, never `console.log`.
-- Input is `ink-text-input` plus raw key handling. Terminals differ; test in more
-  than one before trusting a keybinding.
+  to stderr or to a file. CLI data (list/search/json) is the exception: stdout is data, stderr is logs.
+- Input is `ink-text-input` plus raw key handling.
 
 ## Build shape
 
-`tsup.config.ts` produces two entries: the binary (`dist/ccs.js`, which
-`package.json` `bin` maps to `ccs`) and the library (`dist/index.js`). Types come
-from a separate `tsc --emitDeclarationOnly` pass, so `npm run build` is both steps
-and running only `tsup` ships no declarations.
+`tsdown.config.ts` produces two entries: the binary (`dist/cli.js`, `package.json` `bin` → `ccs`) with a shebang banner, and the library (`dist/index.js` + dts). Do not put a shebang in `src/cli.ts`.
 
-`files` is `["dist", "example.png"]`, so nothing under `src/` is published. Check
-`npm pack --dry-run` after touching the build.
+`files` is `dist`, `example.png`, README, LICENSE. Check `npm pack --dry-run` after touching the build.
 
 ## Reading session history
 
-`src/utils/paths.ts` locates Claude Code's own session files. That layout is
-someone else's and can change between Claude Code releases, so treat a parse
-failure as an expected condition with a readable message (`src/utils/errors.ts`),
-not an exception the user sees as a stack trace. Never write to those files; this
-tool reads history it does not own.
+Never write to Claude, Codex, or Cursor history files. Parse failures are expected: skip the line, do not throw a stack at the user.
+
+| Source | Layout |
+|--------|--------|
+| Claude | `~/.claude/projects/<encoded-cwd>/<uuid>.jsonl` (also `~/.config/claude/projects` if present). Skip `subagents/`. |
+| Codex | `~/.codex/sessions/**/rollout-*.jsonl` and `archived_sessions`. Skip `.jsonl.zst`. |
+| Cursor | Read-only `state.vscdb` (`composerHeaders` + `bubbleId` type 1). Cwd-scoped unless `--source cursor` alone. |
+
+`CCS_PROJECT_DIR` / `--projects-dir` override the Claude projects root only.
 
 ## Releases
 

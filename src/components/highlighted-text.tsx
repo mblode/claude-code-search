@@ -1,5 +1,7 @@
 import { Text } from "ink";
 
+import { highlightRuns } from "../utils/highlight.js";
+
 interface Props {
   text: string;
   positions: Set<number>;
@@ -13,27 +15,18 @@ export function HighlightedText({
   isSelected = false,
   maxLength,
 }: Props) {
+  const truncated = Boolean(maxLength && text.length > maxLength);
   const display =
     maxLength && text.length > maxLength ? text.slice(0, maxLength - 1) : text;
-  const truncated = maxLength && text.length > maxLength;
+  const runs = highlightRuns(display, positions, isSelected);
 
   return (
     <Text>
-      {[...display].map((char, i) => {
-        const isHighlighted = positions.has(i);
-        let color = "gray";
-        if (isHighlighted) {
-          color = "magenta";
-        } else if (isSelected) {
-          color = "white";
-        }
-
-        return (
-          <Text bold={isHighlighted} color={color} key={`${i}-${char}`}>
-            {char}
-          </Text>
-        );
-      })}
+      {runs.map((run, i) => (
+        <Text bold={run.bold} color={run.color} key={`${i}-${run.text.length}`}>
+          {run.text}
+        </Text>
+      ))}
       {truncated && (
         <Text color="gray" dimColor>
           …

@@ -1,13 +1,13 @@
 import clipboard from "clipboardy";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
 import TextInput from "ink-text-input";
-import { useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
-import { HighlightedText } from "./components/highlighted-text.js";
 import { PreviewPane } from "./components/preview-pane.js";
+import { ResultRow } from "./components/result-row.js";
 import { loadMessages } from "./services/loader.js";
 import { search } from "./services/matcher.js";
-import type { ParsedMessage, SearchResult } from "./types/index.js";
+import type { MessageSource, ParsedMessage } from "./types/index.js";
 import { cleanText } from "./utils/content.js";
 import { compactTime } from "./utils/time.js";
 
@@ -16,47 +16,86 @@ type FilterMode = "global" | "directory";
 interface AppProps {
   cwd: string;
   initialProjectFilter?: string;
+  sources?: MessageSource[];
 }
 
 const DIGIT_REGEX = /^[1-9]$/;
 
-export function App({ cwd, initialProjectFilter }: AppProps) {
+function messageKey(message: ParsedMessage): string {
+  return `${message.source}:${message.uuid}`;
+}
+
+function mergeMessages(
+  prev: ParsedMessage[],
+  batch: ParsedMessage[]
+): ParsedMessage[] {
+  const seen = new Set(prev.map(messageKey));
+  const extra = batch.filter((item) => !seen.has(messageKey(item)));
+  if (extra.length === 0) {
+    return prev;
+  }
+  return [...prev, ...extra].toSorted(
+    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+  );
+}
+
+export function App({ cwd, initialProjectFilter, sources }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
 
   const [query, setQuery] = useState("");
-  const [filterMode, setFilterMode] = useState<FilterMode>(
-    initialProjectFilter ? "directory" : "global"
-  );
+  const deferredQuery = useDeferredValue(query);
+  const [filterMode, setFilterMode] = useState<FilterMode>("directory");
   const [messages, setMessages] = useState<ParsedMessage[]>([]);
-  const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setIsLoading(true);
     setLoadError(null);
+    setMessages([]);
     loadMessages({
+      cwd,
       filters: { role: "user" },
+      onProgress: (batch) => {
+        if (!cancelled) {
+          setMessages((prev) => mergeMessages(prev, batch));
+        }
+      },
       projectFilter:
         filterMode === "directory" ? initialProjectFilter || cwd : undefined,
+      sources,
     })
       .then((loaded) => {
-        setMessages(loaded);
-        setIsLoading(false);
+        if (!cancelled) {
+          setMessages(loaded);
+          setIsLoading(false);
+        }
       })
       .catch((error) => {
-        setLoadError(error instanceof Error ? error.message : "Failed to load");
-        setIsLoading(false);
+        if (!cancelled) {
+          setLoadError(
+            error instanceof Error ? error.message : "Failed to load"
+          );
+          setIsLoading(false);
+        }
       });
-  }, [filterMode, cwd, initialProjectFilter]);
+    return () => {
+      cancelled = true;
+    };
+  }, [filterMode, cwd, initialProjectFilter, sources]);
+
+  const results = useMemo(
+    () => search(messages, deferredQuery, 100),
+    [messages, deferredQuery]
+  );
 
   useEffect(() => {
-    setResults(search(messages, query, 100));
     setSelectedIndex(0);
-  }, [query, messages]);
+  }, [deferredQuery]);
 
   const selectItem = (index: number) => {
     const selected = results[index];
@@ -64,61 +103,34 @@ export function App({ cwd, initialProjectFilter }: AppProps) {
       clipboard.writeSync(selected.item.content);
       setCopyStatus("copied");
       setTimeout(() => {
-        console.log(selected.item.content);
         exit();
+        process.stdout.write(`${selected.item.content}\n`);
       }, 150);
     }
   };
 
-  const handleNavigationKey = (key: {
-    upArrow?: boolean;
-    downArrow?: boolean;
-  }) => {
+  useInput((input, key) => {
     if (key.upArrow) {
       setSelectedIndex((i) => Math.max(0, i - 1));
-      return true;
+      return;
     }
     if (key.downArrow) {
       setSelectedIndex((i) => Math.min(results.length - 1, i + 1));
-      return true;
-    }
-    return false;
-  };
-
-  const handleDigitInput = (input: string) => {
-    if (DIGIT_REGEX.test(input)) {
-      const index = Number.parseInt(input, 10) - 1;
-      if (index < results.length) {
-        selectItem(index);
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const handleToggleMode = (
-    key: { ctrl?: boolean; tab?: boolean; shift?: boolean },
-    input: string
-  ) => {
-    if ((key.ctrl && input === "r") || (key.tab && key.shift)) {
-      setFilterMode((m) => (m === "global" ? "directory" : "global"));
-      return true;
-    }
-    return false;
-  };
-
-  useInput((input, key) => {
-    if (handleNavigationKey(key)) {
       return;
     }
     if (key.return) {
       selectItem(selectedIndex);
       return;
     }
-    if (handleDigitInput(input)) {
+    if (DIGIT_REGEX.test(input)) {
+      const index = Number.parseInt(input, 10) - 1;
+      if (index < results.length) {
+        selectItem(index);
+      }
       return;
     }
-    if (handleToggleMode(key, input)) {
+    if ((key.ctrl && input === "r") || (key.tab && key.shift)) {
+      setFilterMode((m) => (m === "global" ? "directory" : "global"));
       return;
     }
     if (key.escape) {
@@ -131,6 +143,7 @@ export function App({ cwd, initialProjectFilter }: AppProps) {
   const leftPaneWidth = Math.floor(terminalWidth / 2);
   const rightPaneWidth = terminalWidth - leftPaneWidth;
   const maxResults = Math.max(5, terminalHeight - 8);
+  const previewLines = Math.max(6, terminalHeight - 8);
 
   const halfWindow = Math.floor(maxResults / 2);
   let startIndex = Math.max(0, selectedIndex - halfWindow);
@@ -139,7 +152,6 @@ export function App({ cwd, initialProjectFilter }: AppProps) {
   const visibleResults = results.slice(startIndex, endIndex);
 
   const selectedMessage = results[selectedIndex]?.item;
-
   const maxContentWidth = leftPaneWidth - 14;
 
   return (
@@ -173,6 +185,11 @@ export function App({ cwd, initialProjectFilter }: AppProps) {
                 </Text>
               </Box>
             )}
+            {!loadError && isLoading && results.length === 0 && (
+              <Text color="gray" dimColor>
+                Loading prompts…
+              </Text>
+            )}
             {!loadError && results.length === 0 && !isLoading && (
               <Box flexDirection="column">
                 <Text color="gray" dimColor>
@@ -186,38 +203,27 @@ export function App({ cwd, initialProjectFilter }: AppProps) {
               </Box>
             )}
             {!loadError &&
-              (results.length > 0 || isLoading) &&
               visibleResults.map((result, i) => {
                 const idx = startIndex + i;
-                const isSelected = idx === selectedIndex;
                 return (
-                  <Box key={`${idx}-${result.item.uuid}`}>
-                    <Box flexGrow={1}>
-                      <Text
-                        color={isSelected ? "magenta" : "gray"}
-                        dimColor={!isSelected}
-                      >
-                        {isSelected ? "▸" : " "}
-                      </Text>
-                      <Text color="gray" dimColor>
-                        {idx < 9 ? idx + 1 : " "}{" "}
-                      </Text>
-                      <HighlightedText
-                        isSelected={isSelected}
-                        maxLength={maxContentWidth}
-                        positions={result.positions}
-                        text={cleanText(result.item.content)}
-                      />
-                    </Box>
-                    <Text color="gray" dimColor>
-                      {compactTime(result.item.timestamp)}
-                    </Text>
-                  </Box>
+                  <ResultRow
+                    index={idx}
+                    isSelected={idx === selectedIndex}
+                    key={`${result.item.source}-${result.item.uuid}`}
+                    maxContentWidth={maxContentWidth}
+                    preview={cleanText(result.item.content)}
+                    result={result}
+                    timeLabel={compactTime(result.item.timestamp)}
+                  />
                 );
               })}
           </Box>
         </Box>
-        <PreviewPane message={selectedMessage} width={rightPaneWidth} />
+        <PreviewPane
+          maxLines={previewLines}
+          message={selectedMessage}
+          width={rightPaneWidth}
+        />
       </Box>
       <Box justifyContent="space-between" paddingX={1}>
         {copyStatus === "copied" ? (
