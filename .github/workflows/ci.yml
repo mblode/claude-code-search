@@ -25,6 +25,7 @@ jobs:
         run: npm ci
 
       - name: Changeset Status
+        if: github.head_ref != 'changeset-release/main'
         run: npx --no-install changeset status --since origin/main
 
       - name: Lint
